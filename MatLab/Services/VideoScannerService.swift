@@ -9,8 +9,9 @@ class VideoScannerService {
 
     // MARK: - Videos Directory
     var videosDirectory: URL {
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let videosPath = documentsPath.appendingPathComponent("MatLab/Videos", isDirectory: true)
+        #if targetEnvironment(simulator)
+        // In simulator: use Mac's Documents folder for easier testing
+        let videosPath = URL(fileURLWithPath: "/Users/ADMIN/Documents/MatLab/Videos", isDirectory: true)
 
         // Create directory if it doesn't exist
         if !FileManager.default.fileExists(atPath: videosPath.path) {
@@ -18,6 +19,17 @@ class VideoScannerService {
         }
 
         return videosPath
+        #else
+        // On real device: use app's Documents directory
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let videosPath = documentsPath.appendingPathComponent("MatLab/Videos", isDirectory: true)
+
+        if !FileManager.default.fileExists(atPath: videosPath.path) {
+            try? FileManager.default.createDirectory(at: videosPath, withIntermediateDirectories: true)
+        }
+
+        return videosPath
+        #endif
     }
 
     // MARK: - Scan Videos
