@@ -78,9 +78,8 @@ struct LibraryView: View {
                 if categories.isEmpty {
                     createDefaultCategories()
                 }
-                if videos.isEmpty {
-                    createSampleVideos()
-                }
+                // Scan videos directory
+                scanVideosDirectory()
             }
         }
     }
@@ -91,32 +90,14 @@ struct LibraryView: View {
         try? modelContext.save()
     }
 
-    private func createSampleVideos() {
-        let sampleData = [
-            ("Ashi Garami Mastery", "Lachlan Giles", "Leg Locks"),
-            ("The Saddle System", "Lachlan Giles", "Leg Locks"),
-            ("Guard Retention Fundamentals", "Lachlan Giles", "Concepts"),
-            ("Leg Lock Defense", "Craig Jones", "Leg Locks"),
-            ("Z Guard System", "Craig Jones", "Half Guard"),
-            ("Back Attack System", "John Danaher", "Back Control"),
-            ("Kimura Trap System", "John Danaher", "Submissions"),
-            ("Closed Guard Fundamentals", "Roger Gracie", "Garde Fermée"),
-            ("X Guard Mastery", "Marcelo Garcia", "X-Guard"),
-            ("Deep Half Guard", "Bernardo Faria", "Half Guard")
-        ]
-
-        for (title, instructor, categoryName) in sampleData {
-            let category = categories.first { $0.name.contains(categoryName) }
-            let video = Video(
-                title: title,
-                instructor: instructor,
-                videoDescription: "Instructional complet sur \(title)",
-                sourceType: .streaming,
-                category: category
-            )
-            modelContext.insert(video)
+    private func scanVideosDirectory() {
+        Task {
+            do {
+                try VideoScannerService.shared.scanVideos(modelContext: modelContext)
+            } catch {
+                print("❌ Error scanning videos: \(error)")
+            }
         }
-        try? modelContext.save()
     }
 }
 

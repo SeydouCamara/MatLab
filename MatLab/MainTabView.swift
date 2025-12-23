@@ -11,31 +11,26 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
-            SearchView()
-                .tabItem {
-                    Label("Recherche", systemImage: "magnifyingglass")
-                }
-                .tag(1)
-
             ProgressionView()
                 .tabItem {
                     Label("Progression", systemImage: "chart.line.uptrend.xyaxis")
                 }
-                .tag(2)
+                .tag(1)
 
             DownloadsView()
                 .tabItem {
                     Label("Téléchargements", systemImage: "arrow.down.circle.fill")
                 }
-                .tag(3)
+                .tag(2)
 
             SettingsView()
                 .tabItem {
                     Label("Réglages", systemImage: "gearshape.fill")
                 }
-                .tag(4)
+                .tag(3)
         }
         .tint(.appPrimary)
+        .preferredColorScheme(.dark)
     }
 }
 

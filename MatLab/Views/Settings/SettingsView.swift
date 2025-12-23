@@ -75,6 +75,18 @@ struct SettingsView: View {
                     NavigationLink("Gérer les tags") {
                         Text("Tags Management")
                     }
+
+                    Button("Scanner le dossier Vidéos") {
+                        // Trigger scan
+                    }
+
+                    HStack {
+                        Text("Dossier Vidéos")
+                        Spacer()
+                        Text(VideoScannerService.shared.videosDirectory.lastPathComponent)
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
                 }
 
                 // Data
