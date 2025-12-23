@@ -23,66 +23,103 @@ class VideoScannerService {
     // MARK: - Scan Videos
     func scanVideos(modelContext: ModelContext) throws {
         let fileManager = FileManager.default
-        let contents = try fileManager.contentsOfDirectory(at: videosDirectory, includingPropertiesForKeys: [.isRegularFileKey])
 
-        let videoExtensions = ["mp4", "mov", "avi", "mkv", "m4v"]
-        let videoFiles = contents.filter { url in
-            videoExtensions.contains(url.pathExtension.lowercased())
+        // Get course folders (Category - Title - Creator)
+        let courseFolders = try fileManager.contentsOfDirectory(
+            at: videosDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey]
+        ).filter { url in
+            var isDirectory: ObjCBool = false
+            fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory)
+            return isDirectory.boolValue && !url.lastPathComponent.hasPrefix(".")
         }
 
-        print("📁 Found \(videoFiles.count) video files in \(videosDirectory.path)")
+        print("📁 Found \(courseFolders.count) course folders in \(videosDirectory.path)")
 
-        for videoURL in videoFiles {
-            processVideoFile(url: videoURL, modelContext: modelContext)
+        for courseFolder in courseFolders {
+            scanCourseFolder(url: courseFolder, modelContext: modelContext)
         }
 
         try modelContext.save()
     }
 
-    // MARK: - Parse Video Filename
-    private func processVideoFile(url: URL, modelContext: ModelContext) {
-        let fileName = url.deletingPathExtension().lastPathComponent
+    // MARK: - Scan Course Folder
+    private func scanCourseFolder(url: URL, modelContext: ModelContext) {
+        let fileManager = FileManager.default
+        let videoExtensions = ["mp4", "mov", "avi", "mkv", "m4v"]
 
-        // Parse format: "Category - Title - Creator"
-        let components = fileName.split(separator: "-").map { $0.trimmingCharacters(in: .whitespaces) }
+        // Parse folder name: "Category - Title - Creator"
+        let folderName = url.lastPathComponent
+        let components = folderName.split(separator: "-").map { $0.trimmingCharacters(in: .whitespaces) }
 
         guard components.count >= 3 else {
-            print("⚠️ Skipping invalid filename format: \(fileName)")
+            print("⚠️ Skipping invalid folder format: \(folderName)")
             return
         }
 
         let categoryName = components[0]
         let titleComponents = components[1..<(components.count - 1)]
-        let title = titleComponents.joined(separator: " - ")
+        let courseTitle = titleComponents.joined(separator: " - ")
         let creator = components.last ?? ""
+
+        print("📂 Scanning: \(categoryName) - \(courseTitle) - \(creator)")
 
         // Find or create category
         let category = findOrCreateCategory(name: categoryName, modelContext: modelContext)
 
-        // Check if video already exists
-        let existingVideos = try? modelContext.fetch(FetchDescriptor<Video>(
-            predicate: #Predicate { video in
-                video.title == title && video.instructor == creator
-            }
-        ))
-
-        if existingVideos?.isEmpty == false {
-            print("⏭️ Video already exists: \(title)")
+        // Recursively find all video files in subfolders
+        guard let enumerator = fileManager.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
             return
         }
 
-        // Create video
-        let video = Video(
-            title: title,
-            instructor: creator,
-            sourceType: .local,
-            localPath: url.path,
-            category: category
-        )
+        var videoCount = 0
+        for case let fileURL as URL in enumerator {
+            guard videoExtensions.contains(fileURL.pathExtension.lowercased()) else {
+                continue
+            }
 
-        modelContext.insert(video)
-        print("✅ Added: \(categoryName) - \(title) - \(creator)")
+            // Get relative path from course folder for video title
+            let relativePath = fileURL.path.replacingOccurrences(of: url.path + "/", with: "")
+            let videoTitle = "\(courseTitle) - " + relativePath
+                .replacingOccurrences(of: ".mp4", with: "")
+                .replacingOccurrences(of: ".mov", with: "")
+                .replacingOccurrences(of: ".avi", with: "")
+                .replacingOccurrences(of: ".mkv", with: "")
+                .replacingOccurrences(of: ".m4v", with: "")
+
+            // Check if video already exists by local path
+            let filePath = fileURL.path
+            let descriptor = FetchDescriptor<Video>(
+                predicate: #Predicate<Video> { video in
+                    video.localPath == filePath
+                }
+            )
+            let existingVideos = try? modelContext.fetch(descriptor)
+
+            if existingVideos?.isEmpty == false {
+                continue
+            }
+
+            // Create video
+            let video = Video(
+                title: videoTitle,
+                instructor: creator,
+                sourceType: .local,
+                localPath: fileURL.path,
+                category: category
+            )
+
+            modelContext.insert(video)
+            videoCount += 1
+        }
+
+        print("✅ Added \(videoCount) videos from \(courseTitle)")
     }
+
 
     // MARK: - Find or Create Category
     private func findOrCreateCategory(name: String, modelContext: ModelContext) -> BJJCategory? {
