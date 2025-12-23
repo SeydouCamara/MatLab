@@ -78,8 +78,10 @@ struct LibraryView: View {
                 if categories.isEmpty {
                     createDefaultCategories()
                 }
-                // Scan videos directory
-                scanVideosDirectory()
+                // Scan videos directory (only once)
+                if videos.isEmpty {
+                    scanVideosDirectory()
+                }
             }
         }
     }
@@ -158,52 +160,60 @@ struct CategorySection: View {
 // MARK: - Video Row Item
 struct VideoRowItem: View {
     let video: Video
+    @State private var showPlayer = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Play Icon
-            ZStack {
-                Circle()
-                    .fill(Color.glassBackground)
-                    .frame(width: 40, height: 40)
+        Button {
+            showPlayer = true
+        } label: {
+            HStack(spacing: 12) {
+                // Play Icon
+                ZStack {
+                    Circle()
+                        .fill(Color.glassBackground)
+                        .frame(width: 40, height: 40)
 
-                Image(systemName: "play.fill")
-                    .font(.caption)
-                    .foregroundStyle(.white)
-            }
-
-            // Info
-            VStack(alignment: .leading, spacing: 4) {
-                Text(video.title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-
-                if let instructor = video.instructor {
-                    Text(instructor)
+                    Image(systemName: "play.fill")
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.white)
                 }
+
+                // Info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(video.title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+
+                    if let instructor = video.instructor {
+                        Text(instructor)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
+                }
+
+                Spacer()
+
+                // Status Badge
+                Image(systemName: video.progressStatus.icon)
+                    .font(.caption)
+                    .foregroundStyle(Color.forProgressStatus(video.progressStatus))
             }
-
-            Spacer()
-
-            // Status Badge
-            Image(systemName: video.progressStatus.icon)
-                .font(.caption)
-                .foregroundStyle(Color.forProgressStatus(video.progressStatus))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.glassBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.glassBorder, lineWidth: 1)
+                    )
+            )
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.glassBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.glassBorder, lineWidth: 1)
-                )
-        )
+        .fullScreenCover(isPresented: $showPlayer) {
+            VideoPlayerView(video: video)
+        }
     }
 }
 

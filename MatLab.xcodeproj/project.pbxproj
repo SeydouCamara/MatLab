@@ -22,6 +22,7 @@
 		A13 /* VideoScannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13 /* VideoScannerService.swift */; };
 		A14 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14 /* GlassCard.swift */; };
 		A15 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15 /* Constants.swift */; };
+		A16 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F16 /* VideoPlayerView.swift */; };
 		A90 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F90 /* Assets.xcassets */; };
 		A91 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F91 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -43,6 +44,7 @@
 		F13 /* VideoScannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoScannerService.swift; sourceTree = "<group>"; };
 		F14 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		F15 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		F16 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		F90 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F91 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -110,6 +112,7 @@
 				VPR /* Progress */,
 				VDO /* Downloads */,
 				VST /* Settings */,
+				VPL /* VideoPlayer */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -152,6 +155,14 @@
 				F12 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		VPL /* VideoPlayer */ = {
+			isa = PBXGroup;
+			children = (
+				F16 /* VideoPlayerView.swift */,
+			);
+			path = VideoPlayer;
 			sourceTree = "<group>";
 		};
 		SERV /* Services */ = {
@@ -272,6 +283,7 @@
 				A13 /* VideoScannerService.swift in Sources */,
 				A14 /* GlassCard.swift in Sources */,
 				A15 /* Constants.swift in Sources */,
+				A16 /* VideoPlayerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
