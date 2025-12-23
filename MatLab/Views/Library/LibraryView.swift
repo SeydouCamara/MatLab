@@ -3,88 +3,83 @@ import SwiftData
 
 struct LibraryView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \BJJCategory.sortOrder) private var categories: [BJJCategory]
-    @State private var showingAddVideo = false
+    @Query(sort: \Video.title) private var videos: [Video]
+    @Query(sort: \BJJCategory.name) private var categories: [BJJCategory]
+    @State private var searchText = ""
+    @State private var expandedCategories: Set<UUID> = []
+    @State private var showAddVideo = false
+
+    // Group videos by category, sorted alphabetically
+    var groupedVideos: [(BJJCategory, [Video])] {
+        let filtered = videos.filter { video in
+            if searchText.isEmpty { return true }
+            let matchTitle = video.title.localizedCaseInsensitiveContains(searchText)
+            let matchInstructor = video.instructor?.localizedCaseInsensitiveContains(searchText) ?? false
+            let matchCategory = video.category?.name.localizedCaseInsensitiveContains(searchText) ?? false
+            return matchTitle || matchInstructor || matchCategory
+        }
+
+        let grouped = Dictionary(grouping: filtered) { $0.category }
+        return categories
+            .filter { grouped[$0] != nil && !grouped[$0]!.isEmpty }
+            .sorted { $0.name < $1.name }
+            .map { ($0, grouped[$0]!) }
+    }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AppConstants.UI.spacing) {
-                    // Quick Access Section
-                    if !categories.isEmpty {
-                        VStack(alignment: .leading, spacing: AppConstants.UI.smallSpacing) {
-                            Text("Accès rapide")
-                                .font(.headline)
-                                .padding(.horizontal)
+            ZStack {
+                Color.appBackground.ignoresSafeArea()
 
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    QuickAccessCard(
-                                        title: "Continuer",
-                                        icon: "play.circle.fill",
-                                        color: .orange
-                                    )
-
-                                    QuickAccessCard(
-                                        title: "Récentes",
-                                        icon: "clock.fill",
-                                        color: .blue
-                                    )
-
-                                    QuickAccessCard(
-                                        title: "Favoris",
-                                        icon: "star.fill",
-                                        color: .yellow
-                                    )
-                                }
-                                .padding(.horizontal)
-                            }
-                        }
-                    }
-
-                    // Categories Grid
-                    VStack(alignment: .leading, spacing: AppConstants.UI.smallSpacing) {
-                        Text("Catégories")
-                            .font(.headline)
-                            .padding(.horizontal)
-
-                        if categories.isEmpty {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        if groupedVideos.isEmpty {
                             EmptyLibraryView()
+                                .padding(.top, 60)
                         } else {
-                            LazyVGrid(
-                                columns: [
-                                    GridItem(.flexible(), spacing: 12),
-                                    GridItem(.flexible(), spacing: 12)
-                                ],
-                                spacing: 12
-                            ) {
-                                ForEach(categories.filter { $0.isRootCategory }) { category in
-                                    CategoryCard(category: category)
+                            ForEach(groupedVideos, id: \.0.id) { category, videos in
+                                CategorySection(
+                                    category: category,
+                                    videos: videos,
+                                    isExpanded: expandedCategories.contains(category.id)
+                                ) {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        if expandedCategories.contains(category.id) {
+                                            expandedCategories.remove(category.id)
+                                        } else {
+                                            expandedCategories.insert(category.id)
+                                        }
+                                    }
                                 }
                             }
-                            .padding(.horizontal)
                         }
                     }
+                    .padding()
                 }
-                .padding(.vertical)
             }
             .navigationTitle("Bibliothèque")
+            .searchable(text: $searchText, prompt: "Rechercher technique ou instructeur...")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showingAddVideo = true
+                        showAddVideo = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title2)
+                            .font(.title3)
+                            .foregroundStyle(.white)
                     }
                 }
             }
-            .sheet(isPresented: $showingAddVideo) {
-                Text("Add Video Form")
+            .preferredColorScheme(.dark)
+            .sheet(isPresented: $showAddVideo) {
+                AddVideoView()
             }
             .onAppear {
                 if categories.isEmpty {
                     createDefaultCategories()
+                }
+                if videos.isEmpty {
+                    createSampleVideos()
                 }
             }
         }
@@ -95,74 +90,138 @@ struct LibraryView: View {
         defaultCategories.forEach { modelContext.insert($0) }
         try? modelContext.save()
     }
-}
 
-// MARK: - Category Card
-struct CategoryCard: View {
-    let category: BJJCategory
+    private func createSampleVideos() {
+        let sampleData = [
+            ("Ashi Garami Mastery", "Lachlan Giles", "Leg Locks"),
+            ("The Saddle System", "Lachlan Giles", "Leg Locks"),
+            ("Guard Retention Fundamentals", "Lachlan Giles", "Concepts"),
+            ("Leg Lock Defense", "Craig Jones", "Leg Locks"),
+            ("Z Guard System", "Craig Jones", "Half Guard"),
+            ("Back Attack System", "John Danaher", "Back Control"),
+            ("Kimura Trap System", "John Danaher", "Submissions"),
+            ("Closed Guard Fundamentals", "Roger Gracie", "Garde Fermée"),
+            ("X Guard Mastery", "Marcelo Garcia", "X-Guard"),
+            ("Deep Half Guard", "Bernardo Faria", "Half Guard")
+        ]
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: category.icon)
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                Spacer()
-                Text("\(category.videoCount)")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.8))
-            }
-
-            Text(category.name)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-                .lineLimit(2)
-
-            // Progress Bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(.white.opacity(0.3))
-                        .frame(height: 4)
-
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(.white)
-                        .frame(width: geometry.size.width * (category.progressPercentage / 100), height: 4)
-                }
-            }
-            .frame(height: 4)
+        for (title, instructor, categoryName) in sampleData {
+            let category = categories.first { $0.name.contains(categoryName) }
+            let video = Video(
+                title: title,
+                instructor: instructor,
+                videoDescription: "Instructional complet sur \(title)",
+                sourceType: .streaming,
+                category: category
+            )
+            modelContext.insert(video)
         }
-        .padding()
-        .frame(height: 120)
-        .background(
-            RoundedRectangle(cornerRadius: AppConstants.UI.cardCornerRadius)
-                .fill(Color.forCategory(category.colorName).gradient)
-        )
+        try? modelContext.save()
     }
 }
 
-// MARK: - Quick Access Card
-struct QuickAccessCard: View {
-    let title: String
-    let icon: String
-    let color: Color
+// MARK: - Category Section
+struct CategorySection: View {
+    let category: BJJCategory
+    let videos: [Video]
+    let isExpanded: Bool
+    let onTap: () -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.white)
+        VStack(spacing: 0) {
+            // Header
+            Button(action: onTap) {
+                HStack(spacing: 12) {
+                    Image(systemName: category.icon)
+                        .font(.title3)
+                        .foregroundStyle(Color.forCategory(category.colorName))
+                        .frame(width: 30)
 
-            Text(title)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(.white)
+                    Text(category.name)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    Spacer()
+
+                    Text("\(videos.count)")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.6))
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .padding()
+                .background(
+                    GlassCard {
+                        Rectangle()
+                            .fill(Color.clear)
+                    }
+                )
+            }
+
+            // Expanded Videos
+            if isExpanded {
+                VStack(spacing: 8) {
+                    ForEach(videos) { video in
+                        VideoRowItem(video: video)
+                    }
+                }
+                .padding(.top, 8)
+            }
         }
-        .frame(width: 100, height: 80)
+    }
+}
+
+// MARK: - Video Row Item
+struct VideoRowItem: View {
+    let video: Video
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Play Icon
+            ZStack {
+                Circle()
+                    .fill(Color.glassBackground)
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: "play.fill")
+                    .font(.caption)
+                    .foregroundStyle(.white)
+            }
+
+            // Info
+            VStack(alignment: .leading, spacing: 4) {
+                Text(video.title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                if let instructor = video.instructor {
+                    Text(instructor)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+
+            Spacer()
+
+            // Status Badge
+            Image(systemName: video.progressStatus.icon)
+                .font(.caption)
+                .foregroundStyle(Color.forProgressStatus(video.progressStatus))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: AppConstants.UI.cornerRadius)
-                .fill(color.gradient)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.glassBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.glassBorder, lineWidth: 1)
+                )
         )
     }
 }
@@ -173,18 +232,46 @@ struct EmptyLibraryView: View {
         VStack(spacing: 16) {
             Image(systemName: "books.vertical")
                 .font(.system(size: 60))
-                .foregroundStyle(.gray)
+                .foregroundStyle(.white.opacity(0.3))
 
             Text("Bibliothèque vide")
                 .font(.title3)
                 .fontWeight(.semibold)
+                .foregroundStyle(.white)
 
-            Text("Ajoutez vos premières vidéos BJJ")
+            Text("Ajoutez vos premiers instructionals")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.6))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 60)
+    }
+}
+
+// MARK: - Add Video View (Placeholder)
+struct AddVideoView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.appBackground.ignoresSafeArea()
+
+                Text("Ajouter une vidéo")
+                    .foregroundStyle(.white)
+            }
+            .navigationTitle("Nouvelle vidéo")
+            .navigationBarTitleDisplayMode(.inline)
+            .preferredColorScheme(.dark)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Annuler") {
+                        dismiss()
+                    }
+                    .foregroundStyle(.white)
+                }
+            }
+        }
     }
 }
 

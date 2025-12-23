@@ -20,6 +20,7 @@
 		011 /* Timestamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111 /* Timestamp.swift */; };
 		012 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112 /* Enums.swift */; };
 		013 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113 /* Constants.swift */; };
+		016 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114 /* GlassCard.swift */; };
 		014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200 /* Assets.xcassets */; };
 		015 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 201 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
@@ -39,6 +40,7 @@
 		111 /* Timestamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Timestamp.swift; sourceTree = "<group>"; };
 		112 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		113 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		114 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		201 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -136,6 +138,7 @@
 		414 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				114 /* GlassCard.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -272,6 +275,7 @@
 				011 /* Timestamp.swift in Sources */,
 				012 /* Enums.swift in Sources */,
 				013 /* Constants.swift in Sources */,
+				016 /* GlassCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

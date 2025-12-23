@@ -20,10 +20,14 @@ extension Color {
     // Error Red
     static let appError = Color(red: 0.863, green: 0.078, blue: 0.235)
 
-    // Backgrounds
-    static let appBackground = Color(UIColor.systemBackground)
-    static let appGroupedBackground = Color(UIColor.systemGroupedBackground)
-    static let appCardBackground = Color(UIColor.secondarySystemGroupedBackground)
+    // Dark Mode Backgrounds
+    static let appBackground = Color.black
+    static let appGroupedBackground = Color(white: 0.05)
+    static let appCardBackground = Color(white: 0.1).opacity(0.5)
+
+    // Glassmorphism
+    static let glassBackground = Color.white.opacity(0.1)
+    static let glassBorder = Color.white.opacity(0.2)
 
     // Belt Colors
     static let beltWhite = Color.white
