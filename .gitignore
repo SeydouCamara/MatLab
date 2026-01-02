@@ -33,3 +33,7 @@ fastlane/test_output
 
 # Code Injection
 iOSInjectionProject/
+
+# Environment variables (NEVER commit!)
+.env
+.env.local
